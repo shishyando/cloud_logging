@@ -1,0 +1,7 @@
+*terraform.*
+.vscode
+.ansible
+ansible_inventory
+ssh_commands
+sanity_check.sh
+logbroker/docker-compose.yaml

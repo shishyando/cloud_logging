@@ -1,0 +1,37 @@
+---
+- name: LOGBROKER
+  hosts: compute
+  gather_facts: false
+  tasks:
+    - name: Wait for SSH connection to be available
+      ansible.builtin.wait_for_connection:
+
+    - name: Gather facts for first time
+      ansible.builtin.setup:
+
+    - name: Install Docker and Docker Compose v2
+      ansible.builtin.apt:
+        name:
+          - docker-compose-v2
+        state: present
+      become: true
+      become_method: ansible.builtin.sudo
+
+    - name: Copy sources
+      ansible.builtin.copy:
+        src: ../logbroker
+        dest: /home/{{ ansible_user }}/
+        mode: "0755"
+
+    - name: Ensure Docker service is started and enabled
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Run docker-compose
+      community.docker.docker_compose_v2:
+        project_src: /home/{{ ansible_user }}/logbroker
+        files: docker-compose.yaml
+      become: true
+      become_method: ansible.builtin.sudo

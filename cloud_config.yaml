@@ -1,0 +1,10 @@
+#cloud-config
+ssh_pwauth: no
+users:
+  - name: shishyando
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDUuw68EOsgjVZwU/UwUqKvGrsxsqBiDB4h2N85ZS9ZvJIKSJZtDs/CUiyh0hsuvjjw6a20ftP5eXZuuNnFJ8jvfBBnGIrCXmgDSQa87stNyX1OIOkYnVIsaxv2pmrox9aea0FDVGtAAeizZyEC8j4BZzasv881WNcGsm3ZlvPjmh/YRCZH6oZj0PxM+iBxQrn/SZZ10QNkSpHwwkm0vFaqhXuWKATjtUZXsY9jY7n5lmidCjB3FRDxU7BJ7s0tN6F8nGxFgYk4E0LZ/c+//VRjj+YPhxTg5AgDUfFO85hb5Y9SApjfxdeAWcty0RND3kiSX2RjvNImEgyPCwGSUkP6J45MzD3KFovRKB2dFySCyoeLRwqYCIvMzIoKEzhFjGCTpeFMAuEP9Vc9RNcjnrpcwHPjYAI0Dfn5YC9xZhmjN7R7yY1X9gA6YUHATou/Tcgi1IzMTezRhQdc2+g3T5zHr/TZDoqydK7wlPI14AaNsTuYXEzarl4Yseiui4C8OSs= shishyando@shishyando-osx"
+runcmd:
+  - echo "^_^"

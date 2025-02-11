@@ -1,0 +1,13 @@
+ssh_nat:
+ssh -q -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no {{ external_ip_nat.value }}
+
+ssh_reverse_proxy:
+ssh -q -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no {{ external_ip_reverse_proxy.value }}
+
+ssh_clickhouse:
+ssh -q -o "ProxyCommand=ssh -q -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no {{ external_ip_nat.value }} -W %h:%p" -o "UserKnownHostsFile=/dev/null" -o StrictHostKeyChecking=no {{ internal_ip_clickhouse.value }}
+
+ssh_compute:
+{%- for line in internal_ip_compute.value %}
+ssh -q -o "ProxyCommand=ssh -q -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no {{ external_ip_nat.value }} -W %h:%p" -o "UserKnownHostsFile=/dev/null" -o StrictHostKeyChecking=no {{ line -}}
+{%- endfor %}

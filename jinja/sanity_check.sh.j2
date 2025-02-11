@@ -1,0 +1,83 @@
+#!/bin/bash
+colorful_echo() {
+  local color="$1"
+  shift
+  local message="$@"
+  local color_code
+
+  case "$color" in
+    black)   color_code=30 ;;
+    red)     color_code=31 ;;
+    green)   color_code=32 ;;
+    yellow)  color_code=33 ;;
+    blue)    color_code=34 ;;
+    magenta) color_code=35 ;;
+    cyan)    color_code=36 ;;
+    white)   color_code=37 ;;
+    *)       color_code=37 ;;  # Default to white if unknown
+  esac
+
+  echo -e "\033[${color_code}m${message}\033[0m"
+}
+
+function nat_jump() {
+  ssh -q -o "ProxyCommand=ssh -q -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no {{ external_ip_nat.value }} -W %h:%p" \
+      -o "UserKnownHostsFile=/dev/null" \
+      -o StrictHostKeyChecking=no \
+      "$@"
+}
+
+# ------------------------------------------------------------------------------------------------------------------------
+# ping computes from NAT
+colorful_echo green "PING COMPUTE FROM NAT"
+{%- for line in internal_ip_compute.value %}
+ssh -q -o "UserKnownHostsFile=/dev/null" -o StrictHostKeyChecking=no {{ external_ip_nat.value }} "ping -c 3 {{ line -}}"
+{%- endfor %}
+
+# ------------------------------------------------------------------------------------------------------------------------
+# ping clickhouse from NAT
+colorful_echo green "PING CLICKHOUSE FROM NAT"
+ssh -q -o "UserKnownHostsFile=/dev/null" -o StrictHostKeyChecking=no {{ external_ip_nat.value }} "ping -c 3 {{ internal_ip_clickhouse.value }}"
+
+# ------------------------------------------------------------------------------------------------------------------------
+# bad pings
+colorful_echo yellow "UNREACHABLE COMPUTE"
+{%- for line in internal_ip_compute.value %}
+ping -c 1 -t 3 {{ line -}}
+{%- endfor %}
+colorful_echo yellow "UNREACHABLE CLICKHOUSE"
+ping -c 1 -t 3 {{ internal_ip_clickhouse.value }}
+
+# ------------------------------------------------------------------------------------------------------------------------
+# curl through proxy
+colorful_echo cyan "CURL THROUGH PROXY"
+
+colorful_echo cyan 'curl -s "{{ external_ip_reverse_proxy.value }}:80/show_create_table?table_name=logs"'
+curl -s "{{ external_ip_reverse_proxy.value }}:80/show_create_table?table_name=logs"
+echo
+
+colorful_echo cyan curl -s {{ external_ip_reverse_proxy.value }}:80/write_log -d '[{"table_name": "logs", "rows": [{"a":1, "b": "some new row"}], "format": "json"}]'
+curl -s {{ external_ip_reverse_proxy.value }}:80/write_log -d '[{"table_name": "logs", "rows": [{"a":1, "b": "some new row"}], "format": "json"}]'
+echo
+
+# ------------------------------------------------------------------------------------------------------------------------
+# check docker logs
+colorful_echo blue "DOCKER CLICKHOUSE LOGS"
+nat_jump {{ internal_ip_clickhouse.value }} 'cd clickhouse && sudo docker compose logs'
+
+{%- for line in internal_ip_compute.value %}
+colorful_echo blue "DOCKER COMPUTE LOGS {{ line }}"
+nat_jump {{ line }} 'cd logbroker && sudo docker compose logs'
+echo
+{%- endfor %}
+
+# ------------------------------------------------------------------------------------------------------------------------
+# view table
+colorful_echo magenta "CLICKHOUSE VIEW TABLE"
+colorful_echo magenta "curl -s 'http://localhost:8123' -d 'DESCRIBE TABLE logs'"
+nat_jump {{ internal_ip_clickhouse.value }} "curl -s 'http://localhost:8123' -d 'DESCRIBE TABLE logs'"
+echo
+
+colorful_echo magenta "curl -s 'http://localhost:8123' -d 'SELECT * FROM logs'"
+nat_jump {{ internal_ip_clickhouse.value }} "curl -s 'http://localhost:8123' -d 'SELECT * FROM logs'"
+echo

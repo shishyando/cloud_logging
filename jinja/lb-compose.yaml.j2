@@ -1,0 +1,8 @@
+services:
+  logbroker:
+    build: .
+    environment:
+      - LOGBROKER_CH_HOST={{ internal_ip_clickhouse.value }}
+    ports:
+      - 8000:8000
+    restart: always

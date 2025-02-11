@@ -1,0 +1,44 @@
+---
+- name: REVERSE_PROXY
+  hosts: reverse_proxy
+  gather_facts: false
+  tasks:
+    - name: Wait for SSH connection to be available
+      ansible.builtin.wait_for_connection:
+
+    - name: Gather facts for first time
+      ansible.builtin.setup:
+
+    - name: Update apt cache and install nginx
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+        update_cache: true
+      become: true
+      become_method: ansible.builtin.sudo
+
+    - name: Apply Nginx template
+      ansible.builtin.template:
+        src: ../jinja/nginx.conf.j2
+        dest: /etc/nginx/sites-available/default
+        mode: "0755"
+      become: true
+      become_method: ansible.builtin.sudo
+      notify: Restart Nginx
+
+    - name: Enable new site
+      ansible.builtin.file:
+        src: /etc/nginx/sites-available/default
+        dest: /etc/nginx/sites-enabled/default
+        state: link
+      become: true
+      become_method: ansible.builtin.sudo
+      notify: Restart Nginx
+
+  handlers:
+    - name: Restart Nginx
+      ansible.builtin.service:
+        name: nginx
+        state: restarted
+      become: true
+      become_method: ansible.builtin.sudo

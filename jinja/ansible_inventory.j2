@@ -1,0 +1,25 @@
+[nat]
+{{ external_ip_nat.value }}
+
+[nat:vars]
+ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+
+[reverse_proxy]
+{{ external_ip_reverse_proxy.value }}
+
+[reverse_proxy:vars]
+ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+
+[clickhouse]
+{{ internal_ip_clickhouse.value }}
+
+[clickhouse:vars]
+ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ProxyCommand="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -W %h:%p -q shishyando@{{ external_ip_nat.value }}"'
+
+[compute]
+{%- for line in internal_ip_compute.value %}
+{{ line -}}
+{% endfor %}
+
+[compute:vars]
+ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ProxyCommand="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -W %h:%p -q shishyando@{{ external_ip_nat.value }}"'
